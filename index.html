@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Fitness Coach</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>المدرب الذكي 🤖💪</h1>
+        
+        <div id="login-section">
+            <p>سجل دخول لتصميم نظامك المخصص</p>
+            <button id="login-btn">تسجيل الدخول بـ Google</button>
+        </div>
+
+        <div id="dashboard-section" style="display: none;">
+            <h2 id="user-name">أهلاً بك</h2>
+            <button id="logout-btn">تسجيل خروج</button>
+            
+            <div class="card">
+                <h3>تحديث بيانات الجسم (Body ID)</h3>
+                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)">
+                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)">
+                <input type="number" id="height-input" placeholder="الطول (سم)">
+                <input type="number" id="age-input" placeholder="العمر">
+                
+                <select id="activity-level">
+                    <option value="1.2">خامل (عمل مكتبي)</option>
+                    <option value="1.375">نشاط خفيف (1-3 أيام)</option>
+                    <option value="1.55">نشاط متوسط (3-5 أيام)</option>
+                    <option value="1.725">نشاط شاق (رفع أثقال وكمال أجسام)</option>
+                </select>
+
+                <select id="gender">
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                </select>
+
+                <button id="save-data-btn">حساب وحفظ النظام</button>
+            </div>
+            
+            <div id="diet-result" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc;">
+                <!-- النتائج هتظهر هنا -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
