@@ -22,8 +22,8 @@ let currentMacros = null;
 let userMetrics = null;
 let weightChartInstance = null;
 
-// مفتاحك
-const GEMINI_API_KEY = "AQ.Ab8RN6KMkyoaJhs86DU1Jx0hIhDuEr2Z2YYem2bC0xCN3bgvog";
+// مفتاح جوجل الجديد بتاعك
+const GEMINI_API_KEY = "AQ.Ab8RN6I_sHtqkhXq6x0I_wE5ilC1nP4HwqPZGm7QSJ1Lo5er1A";
 
 // الوضع الليلي والنهاري
 const themeToggle = document.getElementById('theme-toggle');
@@ -110,7 +110,7 @@ function displayMacros(macros) {
     `;
 }
 
-// رسم الرسم البياني
+// رسم الرسم البياني للوزن
 function renderWeightChart(history) {
     const ctx = document.getElementById('weightChart').getContext('2d');
     if (weightChartInstance) weightChartInstance.destroy();
@@ -144,7 +144,7 @@ function renderWeightChart(history) {
     });
 }
 
-// زر الإعدادات
+// زر الإعدادات لتعديل البيانات
 document.getElementById('edit-profile-btn').addEventListener('click', () => {
     const card = document.getElementById('setup-card');
     card.style.display = card.style.display === 'none' ? 'block' : 'none';
@@ -154,7 +154,7 @@ document.getElementById('cancel-edit-btn').addEventListener('click', () => {
     document.getElementById('setup-card').style.display = 'none';
 });
 
-// حفظ البيانات
+// حفظ البيانات وتحديث السجل
 document.getElementById('save-data-btn').addEventListener('click', () => {
     const weight = parseFloat(document.getElementById('weight-input').value);
     const targetWeight = parseFloat(document.getElementById('target-weight-input').value);
@@ -204,10 +204,10 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     alert("تم حفظ البيانات!");
 });
 
-// توليد جدول الأكل
+// توليد جدول الأكل عبر جوجل Gemini
 document.getElementById('generate-diet-btn').addEventListener('click', async () => {
     if(!currentMacros) return alert("احسب السعرات أولاً");
-    const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية";
+    const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
     const btn = document.getElementById('generate-diet-btn');
     btn.disabled = true;
     btn.innerText = "جاري تصميم الجدول... ⏳";
@@ -215,16 +215,17 @@ document.getElementById('generate-diet-btn').addEventListener('click', async () 
     const prompt = `أنت خبير تغذية رياضي. صمم جدول وجبات يومي من 3 وجبات بناءً على: سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g. الأكلات: ${favFoods}. أخرج النتيجة حصرياً ككود HTML لجدول (<table>) بدون أي نصوص أخرى.`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
+        
         const data = await response.json();
         btn.disabled = false;
         btn.innerText = "توليد جدول الأكل";
 
-        if (data.error) return alert("تفاصيل الخطأ: " + data.error.message);
+        if (!response.ok) return alert("تفاصيل الخطأ: " + (data.error?.message || "مشكلة في السيرفر"));
 
         let aiHtml = data.candidates[0].content.parts[0].text;
         const tableMatch = aiHtml.match(/<table[\s\S]*?<\/table>/i);
@@ -293,7 +294,7 @@ document.getElementById('reset-workout-btn').addEventListener('click', () => {
     }
 });
 
-// المساعد الذكي
+// المساعد الذكي عبر جوجل Gemini
 const aiInput = document.getElementById('ai-input');
 const aiChatBox = document.getElementById('ai-chat-box');
 
@@ -309,7 +310,7 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
         aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 13px;">الكابتن بيفكر...</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: `أنت مدرب رياضي. أجب باختصار: ${msg}` }] }] })
@@ -318,9 +319,8 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
         const data = await response.json();
         document.getElementById(loadingId)?.remove();
         
-        if (data.error) {
-            // هنا هيظهرلك سبب المشكلة بالظبط!
-            return aiChatBox.innerHTML += `<p style="color: red; font-size: 13px;">تفاصيل الخطأ: ${data.error.message}</p>`;
+        if (!response.ok) {
+            return aiChatBox.innerHTML += `<p style="color: red; font-size: 13px;">تفاصيل الخطأ: ${data.error?.message}</p>`;
         }
         
         const reply = data.candidates[0].content.parts[0].text;
