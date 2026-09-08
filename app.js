@@ -1,8 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-// إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAlKAsDcsEQwWpYe6vxMltFg8qhsgvvwBM",
   authDomain: "smart-fitness-coach-44f1e.firebaseapp.com",
@@ -19,43 +18,62 @@ const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
 
 let currentUser = null;
+let currentMacros = null;
 
-// عناصر الواجهة
-const loginBtn = document.getElementById('login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const loginSection = document.getElementById('login-section');
-const dashboardSection = document.getElementById('dashboard-section');
-const userNameDisplay = document.getElementById('user-name');
-const saveDataBtn = document.getElementById('save-data-btn');
-const dietResult = document.getElementById('diet-result');
-const aiInput = document.getElementById('ai-input');
-const aiSendBtn = document.getElementById('ai-send-btn');
-const aiChatBox = document.getElementById('ai-chat-box');
-
-// مفتاح Gemini
 const GEMINI_API_KEY = "AQ.Ab8RN6I2UAg4Dntub48zXzJwXE5nluqLvp2_7JbtlF57U2AwGw";
 
-// دوال الدخول والخروج
-loginBtn.addEventListener('click', () => signInWithPopup(auth, provider));
-logoutBtn.addEventListener('click', () => signOut(auth));
+// دوال تسجيل الدخول
+document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
+document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        loginSection.style.display = 'none';
-        dashboardSection.style.display = 'block';
-        userNameDisplay.innerText = `أهلاً يا كابتن ${user.displayName}`;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('dashboard-section').style.display = 'block';
+        document.getElementById('user-name').innerText = `أهلاً يا كابتن ${user.displayName}`;
+        loadUserData(user.uid); // تحميل بيانات المستخدم والجداول المحفوظة
     } else {
         currentUser = null;
-        loginSection.style.display = 'block';
-        dashboardSection.style.display = 'none';
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('dashboard-section').style.display = 'none';
     }
 });
 
-// حفظ البيانات وحساب النظام
-saveDataBtn.addEventListener('click', () => {
-    if (!currentUser) return;
+// تحميل البيانات المحفوظة مسبقاً
+function loadUserData(uid) {
+    get(child(ref(db), `users/${uid}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            if(data.macros) {
+                currentMacros = data.macros;
+                displayMacros(data.macros);
+                document.getElementById('diet-plan-section').style.display = 'block';
+                document.getElementById('workout-plan-section').style.display = 'block';
+            }
+            if(data.dietTableHTML) {
+                document.getElementById('diet-table-container').innerHTML = data.dietTableHTML;
+                document.getElementById('save-diet-btn').style.display = 'block';
+            }
+            if(data.workoutTableHTML) {
+                document.getElementById('workout-table-container').innerHTML = data.workoutTableHTML;
+                document.getElementById('save-workout-btn').style.display = 'block';
+            }
+        }
+    });
+}
 
+function displayMacros(macros) {
+    const resultDiv = document.getElementById('diet-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h3 style="margin-top:0;">الماكروز المحسوبة:</h3>
+        <p>🔥 السعرات: <strong>${macros.calories}</strong> | 🥩 بروتين: <strong>${macros.protein}g</strong> | 🍚 كارب: <strong>${macros.carbs}g</strong> | 🥑 دهون: <strong>${macros.fats}g</strong></p>
+    `;
+}
+
+// 1. حساب السعرات والماكروز
+document.getElementById('save-data-btn').addEventListener('click', () => {
     const weight = parseFloat(document.getElementById('weight-input').value);
     const targetWeight = parseFloat(document.getElementById('target-weight-input').value);
     const height = parseFloat(document.getElementById('height-input').value);
@@ -63,17 +81,13 @@ saveDataBtn.addEventListener('click', () => {
     const activity = parseFloat(document.getElementById('activity-level').value);
     const gender = document.getElementById('gender').value;
 
-    if (!weight || !height || !age || !targetWeight) {
-        alert("برجاء إدخال جميع البيانات");
-        return;
-    }
+    if (!weight || !height || !age || !targetWeight) return alert("أدخل البيانات كاملة!");
 
     let bmr = (10 * weight) + (6.25 * height) - (5 * age);
     bmr = gender === 'male' ? bmr + 5 : bmr - 161;
 
     const tdee = Math.round(bmr * activity);
     let targetCalories = tdee;
-    
     if (weight > targetWeight) targetCalories -= 500;
     else if (weight < targetWeight) targetCalories += 500;
 
@@ -81,73 +95,127 @@ saveDataBtn.addEventListener('click', () => {
     const fats = Math.round((targetCalories * 0.25) / 9); 
     const carbs = Math.round((targetCalories - ((protein * 4) + (fats * 9))) / 4);
 
-    set(ref(db, 'users/' + currentUser.uid), {
-        name: currentUser.displayName,
-        metrics: { weight, targetWeight, height, age, gender, activity },
-        macros: { calories: targetCalories, protein, fats, carbs },
-        lastUpdated: new Date().toISOString()
-    }).then(() => {
-        dietResult.style.display = 'block';
-        dietResult.innerHTML = `
-            <h3 style="margin-top:0;">نظامك المحسوب:</h3>
-            <p>🔥 <strong>السعرات اليومية:</strong> ${targetCalories} سعرة</p>
-            <p>🥩 <strong>البروتين:</strong> ${protein} جرام</p>
-            <p>🍚 <strong>الكاربوهيدرات:</strong> ${carbs} جرام</p>
-            <p>🥑 <strong>الدهون:</strong> ${fats} جرام</p>
-            <p style="color: #27ae60; font-weight: bold; font-size: 14px; text-align: center; margin-top: 15px;">تم الحفظ في قاعدة البيانات بنجاح ✔️</p>
-        `;
-    }).catch((error) => console.error("Error:", error));
+    currentMacros = { calories: targetCalories, protein, fats, carbs };
+    displayMacros(currentMacros);
+    document.getElementById('diet-plan-section').style.display = 'block';
+    document.getElementById('workout-plan-section').style.display = 'block';
+
+    set(ref(db, `users/${currentUser.uid}/metrics`), { weight, targetWeight, height, age, activity, gender });
+    set(ref(db, `users/${currentUser.uid}/macros`), currentMacros);
 });
 
-// المساعد الذكي
-aiSendBtn.addEventListener('click', async () => {
-    const userMessage = aiInput.value.trim();
-    if (!userMessage) return;
+// 2. توليد جدول التغذية بالذكاء الاصطناعي
+document.getElementById('generate-diet-btn').addEventListener('click', async () => {
+    if(!currentMacros) return alert("احسب السعرات أولاً");
+    const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
+    const loading = document.getElementById('diet-loading');
+    loading.style.display = 'block';
 
-    aiChatBox.innerHTML += `<p class="user-msg"><strong>أنت:</strong> ${userMessage}</p>`;
-    aiInput.value = '';
-    aiChatBox.scrollTop = aiChatBox.scrollHeight;
-
-    const currentWeight = document.getElementById('weight-input').value || "غير محدد";
-    const targetWeight = document.getElementById('target-weight-input').value || "غير محدد";
-    
     const prompt = `
-    أنت مدرب لياقة بدنية وتغذية. 
-    بيانات العميل الحالية: وزنه ${currentWeight} كجم، وهدفه الوصول لـ ${targetWeight} كجم.
-    أجب على سؤاله التالي بشكل مختصر وعملي.
-    سؤال العميل: ${userMessage}
+    أنت خبير تغذية. صمم جدول وجبات يومي مكون من 3 وجبات بناءً على:
+    سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g.
+    أدخل هذه الأكلات إن أمكن: ${favFoods}.
+    أخرج النتيجة حصرياً ككود HTML لجدول (<table>) يحتوي على أعمدة: الوجبة، الأصناف والكميات، السعرات، البروتين.
+    اجعل جميع خلايا <td> تحتوي على الخاصية contenteditable="true" لكي يستطيع المستخدم تعديلها.
+    لا تكتب أي نصوص أخرى غير كود الجدول.
     `;
 
-    const loadingId = "loading-" + Date.now();
-    aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 13px;">الكابتن بيكتب...</p>`;
-    aiChatBox.scrollTop = aiChatBox.scrollHeight;
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await response.json();
+        let aiHtml = data.candidates[0].content.parts[0].text;
+        
+        // تنظيف مخرجات AI من علامات الـ Markdown
+        aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
+        
+        document.getElementById('diet-table-container').innerHTML = aiHtml;
+        document.getElementById('save-diet-btn').style.display = 'block';
+        loading.style.display = 'none';
+    } catch (error) {
+        loading.style.display = 'none';
+        alert("حدث خطأ في تصميم الجدول، جرب مرة أخرى.");
+    }
+});
+
+// حفظ جدول الأكل (بعد أو قبل التعديل اليدوي)
+document.getElementById('save-diet-btn').addEventListener('click', () => {
+    const tableHTML = document.getElementById('diet-table-container').innerHTML;
+    set(ref(db, `users/${currentUser.uid}/dietTableHTML`), tableHTML)
+        .then(() => alert("تم حفظ جدول الأكل بنجاح! ✔️"));
+});
+
+// 3. توليد جدول التمرين
+document.getElementById('generate-workout-btn').addEventListener('click', () => {
+    const type = document.getElementById('workout-type').value;
+    let tableHtml = `<table><tr><th>اليوم</th><th>العضلة</th><th>التمارين (اضغط للتعديل)</th><th>المجاميع x العدادات</th></tr>`;
+    
+    if (type === "3") {
+        tableHtml += `
+            <tr><td contenteditable="true">اليوم 1</td><td contenteditable="true">Push (صدر، كتف، تراي)</td><td contenteditable="true">بنش برس، تجميع دمبل، رفرفة جانبي، دفع تراي</td><td contenteditable="true">3 x 10-12</td></tr>
+            <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">Pull (ظهر، باي)</td><td contenteditable="true">سحب أرضي، سحب عالي، باربيل رو، تبادل باي</td><td contenteditable="true">3 x 10-12</td></tr>
+            <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">Legs (أرجل، بطن)</td><td contenteditable="true">سكوات، طعن، دفع أوزان، بطن</td><td contenteditable="true">4 x 10</td></tr>
+        `;
+    } else if (type === "4") {
+        tableHtml += `
+            <tr><td contenteditable="true">اليوم 1</td><td contenteditable="true">علوي (Upper)</td><td contenteditable="true">بنش برس، سحب ظهر، كتف، باي وتراي</td><td contenteditable="true">3 x 10</td></tr>
+            <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">سفلي (Lower)</td><td contenteditable="true">سكوات، رفرفة أمامي، خلفي، سمانة</td><td contenteditable="true">4 x 12</td></tr>
+            <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">علوي (Upper)</td><td contenteditable="true">تجميع دمبل صدر، سحب أرضي، كتف رفرفة</td><td contenteditable="true">3 x 12</td></tr>
+            <tr><td contenteditable="true">اليوم 4</td><td contenteditable="true">سفلي (Lower)</td><td contenteditable="true">ليج بريس، ديد لفت روماني، طعن</td><td contenteditable="true">4 x 10</td></tr>
+        `;
+    } else {
+        tableHtml += `
+            <tr><td contenteditable="true">اليوم 1</td><td contenteditable="true">صدر (Chest)</td><td contenteditable="true">بنش برس، تجميع عالي، تفتيح، كروس أوفر</td><td contenteditable="true">4 x 10-12</td></tr>
+            <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">ظهر (Back)</td><td contenteditable="true">عقلة، سحب أرضي، ديدليفت، طرمبة</td><td contenteditable="true">4 x 10-12</td></tr>
+            <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">كتف (Shoulders)</td><td contenteditable="true">دفع أوزان، رفرفة جانبي، رفرفة خلفي، ترابيس</td><td contenteditable="true">4 x 12-15</td></tr>
+            <tr><td contenteditable="true">اليوم 4</td><td contenteditable="true">أرجل (Legs)</td><td contenteditable="true">سكوات، ليج بريس، أمامي، خلفي، سمانة</td><td contenteditable="true">4 x 10</td></tr>
+            <tr><td contenteditable="true">اليوم 5</td><td contenteditable="true">ذراع (Arms)</td><td contenteditable="true">بايسيبس بار، تبادل دمبل، دفع تراي، فرنسي</td><td contenteditable="true">3 x 12</td></tr>
+        `;
+    }
+    tableHtml += `</table>`;
+    
+    document.getElementById('workout-table-container').innerHTML = tableHtml;
+    document.getElementById('save-workout-btn').style.display = 'block';
+});
+
+// حفظ جدول التمرين
+document.getElementById('save-workout-btn').addEventListener('click', () => {
+    const tableHTML = document.getElementById('workout-table-container').innerHTML;
+    set(ref(db, `users/${currentUser.uid}/workoutTableHTML`), tableHTML)
+        .then(() => alert("تم حفظ جدول التمرين بنجاح! ✔️"));
+});
+
+// 4. المساعد الذكي
+const aiInput = document.getElementById('ai-input');
+const aiChatBox = document.getElementById('ai-chat-box');
+document.getElementById('ai-send-btn').addEventListener('click', async () => {
+    const msg = aiInput.value.trim();
+    if (!msg) return;
+
+    aiChatBox.innerHTML += `<p class="user-msg"><strong>أنت:</strong> ${msg}</p>`;
+    aiInput.value = '';
+    
+    const prompt = `أنت مدرب تغذية وتمرين. أجب باختصار على هذا السؤال: ${msg}`;
     
     try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+        const loadingId = "loading-" + Date.now();
+        aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray;">الكابتن بيكتب...</p>`;
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-goog-api-key': GEMINI_API_KEY 
-            },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
-
         const data = await response.json();
         document.getElementById(loadingId).remove();
-
-        if(data.error) {
-            aiChatBox.innerHTML += `<p style="color: red;">خطأ في الـ API: ${data.error.message}</p>`;
-        } else {
-            const aiReply = data.candidates[0].content.parts[0].text;
-            aiChatBox.innerHTML += `<p class="ai-msg"><strong>الكابتن:</strong> ${aiReply}</p>`;
-        }
         
+        const reply = data.candidates[0].content.parts[0].text;
+        aiChatBox.innerHTML += `<p class="ai-msg"><strong>الكابتن:</strong> ${reply}</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
-
-    } catch (error) {
-        document.getElementById(loadingId).remove();
-        aiChatBox.innerHTML += `<p style="color: red;">مشكلة في الاتصال بالإنترنت.</p>`;
+    } catch (e) {
+        aiChatBox.innerHTML += `<p style="color: red;">خطأ في الاتصال بالإنترنت.</p>`;
     }
 });
