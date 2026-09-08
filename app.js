@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+// إعدادات Firebase الخاصة بك
 const firebaseConfig = {
   apiKey: "AIzaSyAlKAsDcsEQwWpYe6vxMltFg8qhsgvvwBM",
   authDomain: "smart-fitness-coach-44f1e.firebaseapp.com",
@@ -20,9 +21,10 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let currentMacros = null;
 
-const GEMINI_API_KEY = "AQ.Ab8RN6I2UAg4Dntub48zXzJwXE5nluqLvp2_7JbtlF57U2AwGw";
+// مفتاح Gemini الخاص بك
+const GEMINI_API_KEY = "AQ.Ab8RN6IWZov5Vky1suyZ4_0k6TMItt62f94TswgSe0z6gs6hqg";
 
-// دوال تسجيل الدخول
+// ================= تسجيل الدخول =================
 document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
@@ -32,7 +34,7 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('dashboard-section').style.display = 'block';
         document.getElementById('user-name').innerText = `أهلاً يا كابتن ${user.displayName}`;
-        loadUserData(user.uid); // تحميل بيانات المستخدم والجداول المحفوظة
+        loadUserData(user.uid);
     } else {
         currentUser = null;
         document.getElementById('login-section').style.display = 'block';
@@ -40,7 +42,6 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// تحميل البيانات المحفوظة مسبقاً
 function loadUserData(uid) {
     get(child(ref(db), `users/${uid}`)).then((snapshot) => {
         if (snapshot.exists()) {
@@ -72,7 +73,7 @@ function displayMacros(macros) {
     `;
 }
 
-// 1. حساب السعرات والماكروز
+// ================= حساب السعرات والماكروز =================
 document.getElementById('save-data-btn').addEventListener('click', () => {
     const weight = parseFloat(document.getElementById('weight-input').value);
     const targetWeight = parseFloat(document.getElementById('target-weight-input').value);
@@ -91,8 +92,8 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     if (weight > targetWeight) targetCalories -= 500;
     else if (weight < targetWeight) targetCalories += 500;
 
-    const protein = Math.round(weight * 2.2); 
-    const fats = Math.round((targetCalories * 0.25) / 9); 
+    const protein = Math.round(weight * 2); 
+    const fats = Math.round((targetCalories * 0.20) / 9); 
     const carbs = Math.round((targetCalories - ((protein * 4) + (fats * 9))) / 4);
 
     currentMacros = { calories: targetCalories, protein, fats, carbs };
@@ -104,7 +105,7 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     set(ref(db, `users/${currentUser.uid}/macros`), currentMacros);
 });
 
-// 2. توليد جدول التغذية بالذكاء الاصطناعي
+// ================= توليد جدول الأكل =================
 document.getElementById('generate-diet-btn').addEventListener('click', async () => {
     if(!currentMacros) return alert("احسب السعرات أولاً");
     const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
@@ -116,8 +117,7 @@ document.getElementById('generate-diet-btn').addEventListener('click', async () 
     سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g.
     أدخل هذه الأكلات إن أمكن: ${favFoods}.
     أخرج النتيجة حصرياً ككود HTML لجدول (<table>) يحتوي على أعمدة: الوجبة، الأصناف والكميات، السعرات، البروتين.
-    اجعل جميع خلايا <td> تحتوي على الخاصية contenteditable="true" لكي يستطيع المستخدم تعديلها.
-    لا تكتب أي نصوص أخرى غير كود الجدول.
+    اجعل جميع خلايا <td> تحتوي على الخاصية contenteditable="true". لا تكتب أي نصوص أخرى.
     `;
 
     try {
@@ -127,28 +127,33 @@ document.getElementById('generate-diet-btn').addEventListener('click', async () 
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
         const data = await response.json();
-        let aiHtml = data.candidates[0].content.parts[0].text;
         
-        // تنظيف مخرجات AI من علامات الـ Markdown
-        aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
+        if (data.error) {
+            loading.style.display = 'none';
+            return alert("خطأ من الـ API: " + data.error.message);
+        }
+
+        let aiHtml = data.candidates[0].content.parts[0].text;
+        const tableMatch = aiHtml.match(/<table[\s\S]*?<\/table>/i);
+        if (tableMatch) aiHtml = tableMatch[0];
+        else aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
         
         document.getElementById('diet-table-container').innerHTML = aiHtml;
         document.getElementById('save-diet-btn').style.display = 'block';
         loading.style.display = 'none';
     } catch (error) {
         loading.style.display = 'none';
-        alert("حدث خطأ في تصميم الجدول، جرب مرة أخرى.");
+        alert("تفاصيل الخطأ: " + error.message);
     }
 });
 
-// حفظ جدول الأكل (بعد أو قبل التعديل اليدوي)
 document.getElementById('save-diet-btn').addEventListener('click', () => {
     const tableHTML = document.getElementById('diet-table-container').innerHTML;
     set(ref(db, `users/${currentUser.uid}/dietTableHTML`), tableHTML)
         .then(() => alert("تم حفظ جدول الأكل بنجاح! ✔️"));
 });
 
-// 3. توليد جدول التمرين
+// ================= جدول التمرين =================
 document.getElementById('generate-workout-btn').addEventListener('click', () => {
     const type = document.getElementById('workout-type').value;
     let tableHtml = `<table><tr><th>اليوم</th><th>العضلة</th><th>التمارين (اضغط للتعديل)</th><th>المجاميع x العدادات</th></tr>`;
@@ -181,16 +186,16 @@ document.getElementById('generate-workout-btn').addEventListener('click', () => 
     document.getElementById('save-workout-btn').style.display = 'block';
 });
 
-// حفظ جدول التمرين
 document.getElementById('save-workout-btn').addEventListener('click', () => {
     const tableHTML = document.getElementById('workout-table-container').innerHTML;
     set(ref(db, `users/${currentUser.uid}/workoutTableHTML`), tableHTML)
         .then(() => alert("تم حفظ جدول التمرين بنجاح! ✔️"));
 });
 
-// 4. المساعد الذكي
+// ================= المساعد الذكي =================
 const aiInput = document.getElementById('ai-input');
 const aiChatBox = document.getElementById('ai-chat-box');
+
 document.getElementById('ai-send-btn').addEventListener('click', async () => {
     const msg = aiInput.value.trim();
     if (!msg) return;
@@ -199,23 +204,35 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
     aiInput.value = '';
     
     const prompt = `أنت مدرب تغذية وتمرين. أجب باختصار على هذا السؤال: ${msg}`;
+    const loadingId = "loading-" + Date.now();
     
     try {
-        const loadingId = "loading-" + Date.now();
-        aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray;">الكابتن بيكتب...</p>`;
+        aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 14px;">الكابتن بيفكر...</p>`;
+        aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
+        
         const data = await response.json();
-        document.getElementById(loadingId).remove();
+        const loadingEl = document.getElementById(loadingId);
+        if(loadingEl) loadingEl.remove();
+        
+        if (!response.ok || data.error) {
+            const errorMsg = data.error ? data.error.message : "خطأ مجهول";
+            aiChatBox.innerHTML += `<p style="color: red;"><strong>خطأ من السيرفر:</strong> ${errorMsg}</p>`;
+            return;
+        }
         
         const reply = data.candidates[0].content.parts[0].text;
         aiChatBox.innerHTML += `<p class="ai-msg"><strong>الكابتن:</strong> ${reply}</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
+        
     } catch (e) {
-        aiChatBox.innerHTML += `<p style="color: red;">خطأ في الاتصال بالإنترنت.</p>`;
+        const loadingEl = document.getElementById(loadingId);
+        if(loadingEl) loadingEl.remove();
+        aiChatBox.innerHTML += `<p style="color: red;">خطأ تقني في الاتصال: ${e.message}</p>`;
     }
 });
