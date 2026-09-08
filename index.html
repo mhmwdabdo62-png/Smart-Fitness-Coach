@@ -18,7 +18,16 @@
         <div id="dashboard-section" style="display: none;">
             <h2 id="user-name">أهلاً بك</h2>
             <button id="logout-btn">تسجيل خروج</button>
-            
+                        <!-- قسم المساعد الذكي (AI Coach) -->
+            <div class="card ai-section" style="margin-top: 20px;">
+                <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
+                <div id="ai-chat-box" style="height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9;">
+                    <p style="color: #666;">الكابتن جاهز للرد على أسئلتك عن البدائل، التمرين، أو ثبات الوزن...</p>
+                </div>
+                <input type="text" id="ai-input" placeholder="مثال: عايز بديل لـ 150 جرام فراخ؟" style="width: 75%; padding: 10px;">
+                <button id="ai-send-btn" style="width: 20%; padding: 10px;">إرسال</button>
+            </div>
+
             <div class="card">
                 <h3>تحديث بيانات الجسم (Body ID)</h3>
                 <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)">
