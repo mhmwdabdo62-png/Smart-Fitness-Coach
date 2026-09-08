@@ -22,8 +22,8 @@ let currentMacros = null;
 let userMetrics = null;
 let weightChartInstance = null;
 
-// مفتاح جوجل الجديد بتاعك
-const GEMINI_API_KEY = "AQ.Ab8RN6I_sHtqkhXq6x0I_wE5ilC1nP4HwqPZGm7QSJ1Lo5er1A";
+// مفتاح Groq السريع والمضمون بتاعك (بدون تعقيدات جوجل)
+const GROQ_API_KEY = "Gsk_hHsILeUPDjpVp6lhdPFXWGdyb3FYMMG0gY38vMsIz91y14Y8QuRq";
 
 // الوضع الليلي والنهاري
 const themeToggle = document.getElementById('theme-toggle');
@@ -204,7 +204,7 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     alert("تم حفظ البيانات!");
 });
 
-// توليد جدول الأكل عبر جوجل Gemini
+// ================= توليد جدول الأكل عبر Groq (صاروخي ومضمون) =================
 document.getElementById('generate-diet-btn').addEventListener('click', async () => {
     if(!currentMacros) return alert("احسب السعرات أولاً");
     const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
@@ -215,19 +215,25 @@ document.getElementById('generate-diet-btn').addEventListener('click', async () 
     const prompt = `أنت خبير تغذية رياضي. صمم جدول وجبات يومي من 3 وجبات بناءً على: سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g. الأكلات: ${favFoods}. أخرج النتيجة حصرياً ككود HTML لجدول (<table>) بدون أي نصوص أخرى.`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }]
+            })
         });
         
         const data = await response.json();
         btn.disabled = false;
         btn.innerText = "توليد جدول الأكل";
 
-        if (!response.ok) return alert("تفاصيل الخطأ: " + (data.error?.message || "مشكلة في السيرفر"));
+        if (data.error) return alert("خطأ من السيرفر: " + data.error.message);
 
-        let aiHtml = data.candidates[0].content.parts[0].text;
+        let aiHtml = data.choices[0].message.content;
         const tableMatch = aiHtml.match(/<table[\s\S]*?<\/table>/i);
         if (tableMatch) aiHtml = tableMatch[0];
         else aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
@@ -256,7 +262,7 @@ document.getElementById('reset-diet-btn').addEventListener('click', () => {
     }
 });
 
-// جدول التمرين
+// ================= جدول التمرين =================
 document.getElementById('generate-workout-btn').addEventListener('click', () => {
     const type = document.getElementById('workout-type').value;
     let tableHtml = `<table><tr><th>اليوم</th><th>العضلة</th><th>التمارين</th><th>المجاميع x العدادات</th></tr>`;
@@ -267,10 +273,20 @@ document.getElementById('generate-workout-btn').addEventListener('click', () => 
             <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">Pull</td><td contenteditable="true">سحب أرضي، عالي، تبادل باي</td><td contenteditable="true">3 x 10</td></tr>
             <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">Legs</td><td contenteditable="true">سكوات، ليج بريس، بطن</td><td contenteditable="true">4 x 10</td></tr>
         `;
-    } else {
+    } else if (type === "4") {
         tableHtml += `
             <tr><td contenteditable="true">اليوم 1</td><td contenteditable="true">علوي</td><td contenteditable="true">بنش برس، سحب ظهر، كتف</td><td contenteditable="true">3 x 10</td></tr>
             <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">سفلي</td><td contenteditable="true">سكوات، رفرفة أمامي، سمانة</td><td contenteditable="true">4 x 12</td></tr>
+            <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">علوي</td><td contenteditable="true">تجميع دمبل، سحب أرضي</td><td contenteditable="true">3 x 12</td></tr>
+            <tr><td contenteditable="true">اليوم 4</td><td contenteditable="true">سفلي</td><td contenteditable="true">ليج بريس، ديدليفت روماني</td><td contenteditable="true">4 x 10</td></tr>
+        `;
+    } else {
+        tableHtml += `
+            <tr><td contenteditable="true">اليوم 1</td><td contenteditable="true">صدر</td><td contenteditable="true">بنش برس، عالي، تفتيح</td><td contenteditable="true">4 x 10</td></tr>
+            <tr><td contenteditable="true">اليوم 2</td><td contenteditable="true">ظهر</td><td contenteditable="true">عقلة، سحب أرضي، ديدليفت</td><td contenteditable="true">4 x 10</td></tr>
+            <tr><td contenteditable="true">اليوم 3</td><td contenteditable="true">كتف</td><td contenteditable="true">دفع، رفرفة جانبي وخلفي</td><td contenteditable="true">4 x 12</td></tr>
+            <tr><td contenteditable="true">اليوم 4</td><td contenteditable="true">أرجل</td><td contenteditable="true">سكوات، أمامي وخلفي</td><td contenteditable="true">4 x 10</td></tr>
+            <tr><td contenteditable="true">اليوم 5</td><td contenteditable="true">ذراع</td><td contenteditable="true">بايسبس، تراسبس</td><td contenteditable="true">3 x 12</td></tr>
         `;
     }
     tableHtml += `</table>`;
@@ -294,7 +310,7 @@ document.getElementById('reset-workout-btn').addEventListener('click', () => {
     }
 });
 
-// المساعد الذكي عبر جوجل Gemini
+// ================= المساعد الذكي عبر Groq =================
 const aiInput = document.getElementById('ai-input');
 const aiChatBox = document.getElementById('ai-chat-box');
 
@@ -310,20 +326,26 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
         aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 13px;">الكابتن بيفكر...</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: `أنت مدرب رياضي. أجب باختصار: ${msg}` }] }] })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: `أنت مدرب رياضي. أجب باختصار: ${msg}` }]
+            })
         });
         
         const data = await response.json();
         document.getElementById(loadingId)?.remove();
         
-        if (!response.ok) {
-            return aiChatBox.innerHTML += `<p style="color: red; font-size: 13px;">تفاصيل الخطأ: ${data.error?.message}</p>`;
+        if (data.error) {
+            return aiChatBox.innerHTML += `<p style="color: red; font-size: 13px;">تفاصيل الخطأ: ${data.error.message}</p>`;
         }
         
-        const reply = data.candidates[0].content.parts[0].text;
+        const reply = data.choices[0].message.content;
         aiChatBox.innerHTML += `<p class="ai-msg"><strong>الكابتن:</strong> ${reply}</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
     } catch (e) {
