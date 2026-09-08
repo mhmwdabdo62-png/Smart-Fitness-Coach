@@ -10,58 +10,76 @@
     <div class="container">
         <h1>المدرب الذكي 🤖💪</h1>
         
-        <!-- قسم تسجيل الدخول -->
         <div id="login-section">
             <p>سجل دخول لتصميم نظامك المخصص</p>
             <button id="login-btn">تسجيل الدخول بـ Google</button>
         </div>
 
-        <!-- لوحة التحكم -->
         <div id="dashboard-section" style="display: none;">
             <h2 id="user-name">أهلاً بك</h2>
-            <button id="logout-btn" style="background-color: #e74c3c;">تسجيل خروج</button>
+            <button id="logout-btn" style="background-color: #333; margin-bottom: 20px;">تسجيل خروج</button>
             
+            <!-- 1. قسم بيانات الجسم -->
             <div class="card">
-                <h3>تحديث بيانات الجسم (Body ID)</h3>
+                <h3>1. تحديث بيانات الجسم (Body ID)</h3>
                 <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)" value="100">
                 <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)" value="80">
                 <input type="number" id="height-input" placeholder="الطول (سم)" value="178">
                 <input type="number" id="age-input" placeholder="العمر">
-                
                 <select id="activity-level">
                     <option value="1.2">خامل (عمل مكتبي)</option>
                     <option value="1.375">نشاط خفيف (1-3 أيام)</option>
                     <option value="1.55">نشاط متوسط (3-5 أيام)</option>
                     <option value="1.725">نشاط شاق (رفع أثقال وكمال أجسام)</option>
                 </select>
-
                 <select id="gender">
                     <option value="male">ذكر</option>
                     <option value="female">أنثى</option>
                 </select>
-
-                <button id="save-data-btn">حساب وحفظ النظام</button>
+                <button id="save-data-btn">حساب وحفظ السعرات</button>
             </div>
             
-            <!-- نتيجة النظام الغذائي -->
-            <div id="diet-result" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none;">
+            <!-- نتيجة السعرات -->
+            <div id="diet-result" style="display: none;"></div>
+
+            <!-- 2. قسم تصميم جدول الأكل -->
+            <div class="card" id="diet-plan-section" style="display: none;">
+                <h3>2. جدول التغذية 🥗</h3>
+                <p style="font-size: 14px; color: #ccc;">دخل الأكل اللي بتحبه والـ AI هيوزعه على الماكروز بتاعتك</p>
+                <input type="text" id="favorite-foods" placeholder="مثال: بيض، شوفان، فراخ، رز، تونة">
+                <button id="generate-diet-btn" style="background: linear-gradient(45deg, #27ae60, #2ecc71);">صمم جدول الأكل بالذكاء الاصطناعي</button>
+                <div id="diet-loading" style="display: none; color: #2ecc71; text-align: center;">جاري حساب الجرامات وتصميم الجدول... ⏳</div>
+                <div id="diet-table-container"></div>
+                <button id="save-diet-btn" style="display: none; background: #c0392b;">حفظ جدول الأكل (بعد التعديل)</button>
             </div>
 
-            <!-- قسم المساعد الذكي (AI Coach) -->
-            <div class="card ai-section" style="margin-top: 20px;">
+            <!-- 3. قسم جدول التمرين -->
+            <div class="card" id="workout-plan-section" style="display: none;">
+                <h3>3. جدول التمرين 🏋️</h3>
+                <select id="workout-type">
+                    <option value="3">3 أيام - شامل للجسم (Full Body)</option>
+                    <option value="4">4 أيام - علوي وسفلي (Upper / Lower)</option>
+                    <option value="5">5 أيام - تقسيم عضلات (Bro Split)</option>
+                </select>
+                <button id="generate-workout-btn" style="background: linear-gradient(45deg, #2980b9, #3498db);">عرض جدول التمرين</button>
+                <div id="workout-table-container"></div>
+                <button id="save-workout-btn" style="display: none; background: #c0392b;">حفظ جدول التمرين (بعد التعديل)</button>
+            </div>
+
+            <!-- 4. شات الذكاء الاصطناعي -->
+            <div class="card ai-section">
                 <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
                 <div id="ai-chat-box">
-                    <p style="color: #666; font-size: 14px;">الكابتن جاهز للرد على أسئلتك عن البدائل، التمرين، أو ثبات الوزن...</p>
+                    <p style="color: #888; font-size: 14px; text-align: center;">الكابتن جاهز للرد على أسئلتك...</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <input type="text" id="ai-input" placeholder="مثال: عايز بديل لـ 150 جرام فراخ؟" style="flex: 1;">
+                    <input type="text" id="ai-input" placeholder="اكتب سؤالك هنا..." style="flex: 1;">
                     <button id="ai-send-btn" style="width: 80px;">إرسال</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- استدعاء ملف الجافاسكريبت كـ Module -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
