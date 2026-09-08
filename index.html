@@ -1,30 +1,43 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Fitness Coach</title>
+    <title>Smart Fitness Coach - Pro</title>
     <link rel="stylesheet" href="style.css">
+    <!-- مكتبة الرسم البياني لتتبع الأوزان -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>المدرب الذكي 🤖💪</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <button id="theme-toggle" style="width: auto; padding: 5px 10px; font-size: 14px; background: #333;">🌙 الوضع</button>
+            <h1 style="margin: 0; flex: 1; text-align: center;">المدرب الذكي 🤖💪</h1>
+            <div style="width: 60px;"></div> <!-- توازن المسافة -->
+        </div>
         
+        <!-- قسم تسجيل الدخول -->
         <div id="login-section">
-            <p>سجل دخول لتصميم نظامك المخصص</p>
+            <p style="text-align: center;">سجل دخول لتصميم نظامك المخصص ومتابعة تقدمك</p>
             <button id="login-btn">تسجيل الدخول بـ Google</button>
         </div>
 
+        <!-- لوحة التحكم الرئيسية -->
         <div id="dashboard-section" style="display: none;">
-            <h2 id="user-name">أهلاً بك</h2>
-            <button id="logout-btn" style="background-color: #333; margin-bottom: 20px;">تسجيل خروج</button>
+            <div class="user-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 id="user-name" style="margin: 0; color: var(--text-color);">أهلاً بك</h3>
+                <div>
+                    <button id="edit-profile-btn" style="padding: 6px 12px; font-size: 14px; background: #333; margin-left: 5px; width: auto;">⚙️ الإعدادات</button>
+                    <button id="logout-btn" style="padding: 6px 12px; font-size: 14px; background: #990000; width: auto;">خروج</button>
+                </div>
+            </div>
             
-            <!-- 1. قسم بيانات الجسم -->
-            <div class="card">
-                <h3>1. تحديث بيانات الجسم (Body ID)</h3>
-                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)" value="100">
-                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)" value="80">
-                <input type="number" id="height-input" placeholder="الطول (سم)" value="178">
+            <!-- نموذج إدخال البيانات -->
+            <div class="card" id="setup-card" style="display: none;">
+                <h3 id="form-title">إدخال بيانات الجسم وتحديث الوزن</h3>
+                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)">
+                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)">
+                <input type="number" id="height-input" placeholder="الطول (سم)">
                 <input type="number" id="age-input" placeholder="العمر">
                 <select id="activity-level">
                     <option value="1.2">خامل (عمل مكتبي)</option>
@@ -36,45 +49,58 @@
                     <option value="male">ذكر</option>
                     <option value="female">أنثى</option>
                 </select>
-                <button id="save-data-btn">حساب وحفظ السعرات</button>
+                <button id="save-data-btn">حفظ وتحديث النظام</button>
+                <button id="cancel-edit-btn" style="background: #444; display: none;">إلغاء</button>
             </div>
             
-            <!-- نتيجة السعرات -->
+            <!-- نتيجة السعرات والماكروز -->
             <div id="diet-result" style="display: none;"></div>
 
-            <!-- 2. قسم تصميم جدول الأكل -->
-            <div class="card" id="diet-plan-section" style="display: none;">
-                <h3>2. جدول التغذية 🥗</h3>
-                <p style="font-size: 14px; color: #ccc;">دخل الأكل اللي بتحبه والـ AI هيوزعه على الماكروز بتاعتك</p>
-                <input type="text" id="favorite-foods" placeholder="مثال: بيض، شوفان، فراخ، رز، تونة">
-                <button id="generate-diet-btn" style="background: linear-gradient(45deg, #27ae60, #2ecc71);">صمم جدول الأكل بالذكاء الاصطناعي</button>
-                <div id="diet-loading" style="display: none; color: #2ecc71; text-align: center;">جاري حساب الجرامات وتصميم الجدول... ⏳</div>
-                <div id="diet-table-container"></div>
-                <button id="save-diet-btn" style="display: none; background: #c0392b;">حفظ جدول الأكل (بعد التعديل)</button>
+            <!-- قسم تتبع الوزن (الرسم البياني) -->
+            <div class="card" id="progress-section" style="display: none;">
+                <h3>📊 سجل تطور الوزن</h3>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px;">
+                    <canvas id="weightChart" style="max-height: 200px;"></canvas>
+                </div>
             </div>
 
-            <!-- 3. قسم جدول التمرين -->
+            <!-- قسم جدول التغذية -->
+            <div class="card" id="diet-plan-section" style="display: none;">
+                <h3>جدول التغذية 🥗</h3>
+                <input type="text" id="favorite-foods" placeholder="مثال: بيض، شوفان، فراخ، رز، تونة">
+                <div style="display: flex; gap: 10px;">
+                    <button id="generate-diet-btn" style="flex: 1; background: linear-gradient(45deg, #1e7e34, #28a745);">توليد جدول الأكل</button>
+                    <button id="reset-diet-btn" style="width: 100px; background: #c0392b; display: none;">حذف الجدول</button>
+                </div>
+                <div id="diet-table-container"></div>
+                <button id="save-diet-btn" style="display: none; background: #27ae60;">حفظ تعديلات جدول الأكل</button>
+            </div>
+
+            <!-- قسم جدول التمرين -->
             <div class="card" id="workout-plan-section" style="display: none;">
-                <h3>3. جدول التمرين 🏋️</h3>
+                <h3>جدول التمرين 🏋️</h3>
                 <select id="workout-type">
                     <option value="3">3 أيام - شامل للجسم (Full Body)</option>
                     <option value="4">4 أيام - علوي وسفلي (Upper / Lower)</option>
                     <option value="5">5 أيام - تقسيم عضلات (Bro Split)</option>
                 </select>
-                <button id="generate-workout-btn" style="background: linear-gradient(45deg, #2980b9, #3498db);">عرض جدول التمرين</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="generate-workout-btn" style="flex: 1; background: linear-gradient(45deg, #117a8b, #17a2b8);">عرض جدول التمرين</button>
+                    <button id="reset-workout-btn" style="width: 100px; background: #c0392b; display: none;">حذف الجدول</button>
+                </div>
                 <div id="workout-table-container"></div>
-                <button id="save-workout-btn" style="display: none; background: #c0392b;">حفظ جدول التمرين (بعد التعديل)</button>
+                <button id="save-workout-btn" style="display: none; background: #27ae60;">حفظ تعديلات جدول التمرين</button>
             </div>
 
-            <!-- 4. شات الذكاء الاصطناعي -->
+            <!-- شات الذكاء الاصطناعي -->
             <div class="card ai-section">
                 <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
                 <div id="ai-chat-box">
-                    <p style="color: #888; font-size: 14px; text-align: center;">الكابتن جاهز للرد على أسئلتك...</p>
+                    <p style="color: #888; font-size: 13px; text-align: center; margin:0;">الكابتن جاهز للرد على استفساراتك...</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <input type="text" id="ai-input" placeholder="اكتب سؤالك هنا..." style="flex: 1;">
-                    <button id="ai-send-btn" style="width: 80px;">إرسال</button>
+                    <input type="text" id="ai-input" placeholder="اكتب سؤالك هنا..." style="flex: 1; margin:0;">
+                    <button id="ai-send-btn" style="width: 80px; margin:0;">إرسال</button>
                 </div>
             </div>
         </div>
