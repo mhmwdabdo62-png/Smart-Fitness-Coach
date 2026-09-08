@@ -10,29 +10,22 @@
     <div class="container">
         <h1>المدرب الذكي 🤖💪</h1>
         
+        <!-- قسم تسجيل الدخول -->
         <div id="login-section">
             <p>سجل دخول لتصميم نظامك المخصص</p>
             <button id="login-btn">تسجيل الدخول بـ Google</button>
         </div>
 
+        <!-- لوحة التحكم -->
         <div id="dashboard-section" style="display: none;">
             <h2 id="user-name">أهلاً بك</h2>
-            <button id="logout-btn">تسجيل خروج</button>
-                        <!-- قسم المساعد الذكي (AI Coach) -->
-            <div class="card ai-section" style="margin-top: 20px;">
-                <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
-                <div id="ai-chat-box" style="height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9;">
-                    <p style="color: #666;">الكابتن جاهز للرد على أسئلتك عن البدائل، التمرين، أو ثبات الوزن...</p>
-                </div>
-                <input type="text" id="ai-input" placeholder="مثال: عايز بديل لـ 150 جرام فراخ؟" style="width: 75%; padding: 10px;">
-                <button id="ai-send-btn" style="width: 20%; padding: 10px;">إرسال</button>
-            </div>
-
+            <button id="logout-btn" style="background-color: #e74c3c;">تسجيل خروج</button>
+            
             <div class="card">
                 <h3>تحديث بيانات الجسم (Body ID)</h3>
-                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)">
-                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)">
-                <input type="number" id="height-input" placeholder="الطول (سم)">
+                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)" value="100">
+                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)" value="80">
+                <input type="number" id="height-input" placeholder="الطول (سم)" value="178">
                 <input type="number" id="age-input" placeholder="العمر">
                 
                 <select id="activity-level">
@@ -50,12 +43,25 @@
                 <button id="save-data-btn">حساب وحفظ النظام</button>
             </div>
             
-            <div id="diet-result" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc;">
-                <!-- النتائج هتظهر هنا -->
+            <!-- نتيجة النظام الغذائي -->
+            <div id="diet-result" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; display: none;">
+            </div>
+
+            <!-- قسم المساعد الذكي (AI Coach) -->
+            <div class="card ai-section" style="margin-top: 20px;">
+                <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
+                <div id="ai-chat-box">
+                    <p style="color: #666; font-size: 14px;">الكابتن جاهز للرد على أسئلتك عن البدائل، التمرين، أو ثبات الوزن...</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="ai-input" placeholder="مثال: عايز بديل لـ 150 جرام فراخ؟" style="flex: 1;">
+                    <button id="ai-send-btn" style="width: 80px;">إرسال</button>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- استدعاء ملف الجافاسكريبت كـ Module -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
