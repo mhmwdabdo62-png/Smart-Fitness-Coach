@@ -21,8 +21,8 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let currentMacros = null;
 
-// مفتاح Gemini الخاص بك
-const GEMINI_API_KEY = "AQ.Ab8RN6IWZov5Vky1suyZ4_0k6TMItt62f94TswgSe0z6gs6hqg";
+// مفتاح Groq API الخاص بك
+const GROQ_API_KEY = "Gsk_hHsILeUPDjpVp6lhdPFXWGdyb3FYMMG0gY38vMsIz91y14Y8QuRq";
 
 // ================= تسجيل الدخول =================
 document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
@@ -105,45 +105,49 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     set(ref(db, `users/${currentUser.uid}/macros`), currentMacros);
 });
 
-// ================= توليد جدول الأكل =================
+// ================= توليد جدول الأكل (عبر Groq AI) =================
 document.getElementById('generate-diet-btn').addEventListener('click', async () => {
     if(!currentMacros) return alert("احسب السعرات أولاً");
     const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
     const loading = document.getElementById('diet-loading');
     loading.style.display = 'block';
 
-    const prompt = `
-    أنت خبير تغذية. صمم جدول وجبات يومي مكون من 3 وجبات بناءً على:
-    سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g.
-    أدخل هذه الأكلات إن أمكن: ${favFoods}.
-    أخرج النتيجة حصرياً ككود HTML لجدول (<table>) يحتوي على أعمدة: الوجبة، الأصناف والكميات، السعرات، البروتين.
-    اجعل جميع خلايا <td> تحتوي على الخاصية contenteditable="true". لا تكتب أي نصوص أخرى.
-    `;
+    const prompt = `أنت خبير تغذية رياضي. صمم جدول وجبات يومي مكون من 3 وجبات بناءً على القيم التالية: سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g. الأكلات المفضلة للمستخدم: ${favFoods}. أخرج النتيجة حصرياً ككود HTML لجدول (<table>) يحتوي على أعمدة: الوجبة، الأصناف والكميات، السعرات، البروتين. اجعل جميع خلايا <td> تحتوي على الخاصية contenteditable="true". لا تكتب أي نصوص أو شروحات إضافية خارج كود الـ table.`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: prompt }]
+            })
         });
+        
         const data = await response.json();
         
         if (data.error) {
             loading.style.display = 'none';
-            return alert("خطأ من الـ API: " + data.error.message);
+            return alert("خطأ من السيرفر: " + data.error.message);
         }
 
-        let aiHtml = data.candidates[0].content.parts[0].text;
+        let aiHtml = data.choices[0].message.content;
         const tableMatch = aiHtml.match(/<table[\s\S]*?<\/table>/i);
-        if (tableMatch) aiHtml = tableMatch[0];
-        else aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
+        if (tableMatch) {
+            aiHtml = tableMatch[0];
+        } else {
+            aiHtml = aiHtml.replace(/```html/g, '').replace(/```/g, '');
+        }
         
         document.getElementById('diet-table-container').innerHTML = aiHtml;
         document.getElementById('save-diet-btn').style.display = 'block';
         loading.style.display = 'none';
     } catch (error) {
         loading.style.display = 'none';
-        alert("تفاصيل الخطأ: " + error.message);
+        alert("خطأ في الاتصال: " + error.message);
     }
 });
 
@@ -192,7 +196,7 @@ document.getElementById('save-workout-btn').addEventListener('click', () => {
         .then(() => alert("تم حفظ جدول التمرين بنجاح! ✔️"));
 });
 
-// ================= المساعد الذكي =================
+// ================= المساعد الذكي (Groq AI Chat) =================
 const aiInput = document.getElementById('ai-input');
 const aiChatBox = document.getElementById('ai-chat-box');
 
@@ -203,17 +207,22 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
     aiChatBox.innerHTML += `<p class="user-msg"><strong>أنت:</strong> ${msg}</p>`;
     aiInput.value = '';
     
-    const prompt = `أنت مدرب تغذية وتمرين. أجب باختصار على هذا السؤال: ${msg}`;
     const loadingId = "loading-" + Date.now();
     
     try {
         aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 14px;">الكابتن بيفكر...</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: `أنت مدرب تغذية وتمرين محترف. أجب باختصار وعملي على هذا السؤال: ${msg}` }]
+            })
         });
         
         const data = await response.json();
@@ -226,7 +235,7 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
             return;
         }
         
-        const reply = data.candidates[0].content.parts[0].text;
+        const reply = data.choices[0].message.content;
         aiChatBox.innerHTML += `<p class="ai-msg"><strong>الكابتن:</strong> ${reply}</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
