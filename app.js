@@ -189,7 +189,6 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     get(child(ref(db), `users/${currentUser.uid}/weightHistory`)).then((snapshot) => {
         let history = snapshot.exists() ? snapshot.val() : [];
         const today = new Date().toISOString().split('T')[0];
-        // لو نفس اليوم، نحدث الوزن، لو يوم جديد نضيفه
         const lastEntry = history[history.length - 1];
         if (lastEntry && lastEntry.date === today) {
             lastEntry.weight = weight;
@@ -205,7 +204,7 @@ document.getElementById('save-data-btn').addEventListener('click', () => {
     alert("تم حفظ وتحديث البيانات بنجاح! ✔️");
 });
 
-// توليد جدول الأكل مع حالات التحميل
+// توليد جدول الأكل باستخدام الموديل المستقر (gemini-pro)
 document.getElementById('generate-diet-btn').addEventListener('click', async () => {
     if(!currentMacros) return alert("احسب السعرات أولاً");
     const favFoods = document.getElementById('favorite-foods').value || "أكلات صحية متنوعة";
@@ -216,7 +215,7 @@ document.getElementById('generate-diet-btn').addEventListener('click', async () 
     const prompt = `أنت خبير تغذية رياضي. صمم جدول وجبات يومي مكون من 3 وجبات بناءً على: سعرات: ${currentMacros.calories}، بروتين: ${currentMacros.protein}g، كارب: ${currentMacros.carbs}g، دهون: ${currentMacros.fats}g. الأكلات: ${favFoods}. أخرج النتيجة حصرياً ككود HTML لجدول (<table>) يحتوي على أعمدة: الوجبة، الأصناف والكميات، السعرات، البروتين. اجعل جميع خلايا <td> تحتوي على contenteditable="true". لا تكتب أي نصوص أخرى.`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -306,7 +305,7 @@ document.getElementById('reset-workout-btn').addEventListener('click', () => {
     }
 });
 
-// المساعد الذكي
+// المساعد الذكي باستخدام الموديل المستقر (gemini-pro)
 const aiInput = document.getElementById('ai-input');
 const aiChatBox = document.getElementById('ai-chat-box');
 
@@ -322,7 +321,7 @@ document.getElementById('ai-send-btn').addEventListener('click', async () => {
         aiChatBox.innerHTML += `<p id="${loadingId}" style="color: gray; font-size: 13px;">الكابتن بيفكر...</p>`;
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: `أنت مدرب تغذية وتمرين. أجب باختصار وعملي: ${msg}` }] }] })
