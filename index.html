@@ -1,111 +1,777 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Fitness Coach - Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- مكتبة الرسم البياني لتتبع الأوزان -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Smart-Fitness-Coach: المدرب الذكي الحقيقي للتمارين، التغذية، والزيادة التدريجية">
+  
+  <title>Smart-Fitness-Coach | AI Gym & Nutrition</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E50914'><path d='M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z'/></svg>">
+
+  <!-- Google Firebase SDK v10 (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <button id="theme-toggle" style="width: auto; padding: 5px 10px; font-size: 14px; background: #333;">🌙 الوضع</button>
-            <h1 style="margin: 0; flex: 1; text-align: center;">المدرب الذكي 🤖💪</h1>
-            <div style="width: 60px;"></div> <!-- توازن المسافة -->
+
+  <div id="app-container">
+
+    <!-- Top Sticky Header -->
+    <header class="top-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>
         </div>
+        <div class="brand-title">SMART<span>COACH</span></div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Language Switcher Toggle -->
+        <button class="lang-toggle-btn" id="btn-toggle-lang" title="تبديل اللغة / Switch Language">
+          <span class="lang-indicator" id="lang-indicator-text">عربي 🇪🇬</span>
+        </button>
+
+        <span class="badge badge-red" id="badge-header-goal" style="font-size: 0.65rem;">تضخيم نظيف</span>
+        <button class="user-avatar-btn" id="btn-profile-settings" title="الملف الشخصي والإعدادات" aria-label="Open Profile Settings">
+          <img id="header-avatar-img" src="" alt="User" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+          <span id="header-avatar-text" class="user-avatar-fallback">م</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area: 5 SPA Views -->
+    <main class="app-content">
+
+      <!-- ================= VIEW 1: HOME DASHBOARD ================= -->
+      <section id="view-home" class="spa-view active">
         
-        <!-- قسم تسجيل الدخول -->
-        <div id="login-section">
-            <p style="text-align: center;">سجل دخول لتصميم نظامك المخصص ومتابعة تقدمك</p>
-            <button id="login-btn">تسجيل الدخول بـ Google</button>
+        <!-- Welcome Greeting Card -->
+        <div class="gym-card glow-red">
+          <div class="card-header">
+            <div>
+              <span id="lbl-training-day" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">يوم تمرين 4 من 5</span>
+              <h2 style="font-size: 1.35rem; font-weight: 900; margin-top: 2px;"><span id="lbl-greeting-prefix">عاش يا بطل، </span><span id="header-user-name" style="color: var(--accent-red);">محمود</span>!</h2>
+            </div>
+            <span class="badge badge-green" id="lbl-goal-subtag">بناء عضلي</span>
+          </div>
+          <p id="lbl-user-summary" style="font-size: 0.85rem; color: var(--text-secondary);">
+            22 سنة &bull; 178 سم &bull; 75.0 كجم &bull; فائض سعرات +275 لتضخيم نظيف.
+          </p>
         </div>
 
-        <!-- لوحة التحكم الرئيسية -->
-        <div id="dashboard-section" style="display: none;">
-            <div class="user-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
-                <h3 id="user-name" style="margin: 0; color: var(--text-color);">أهلاً بك</h3>
-                <div>
-                    <button id="edit-profile-btn" style="padding: 6px 12px; font-size: 14px; background: #333; margin-left: 5px; width: auto;">⚙️ الإعدادات</button>
-                    <button id="logout-btn" style="padding: 6px 12px; font-size: 14px; background: #990000; width: auto;">خروج</button>
-                </div>
-            </div>
-            
-            <!-- نموذج إدخال البيانات -->
-            <div class="card" id="setup-card" style="display: none;">
-                <h3 id="form-title">إدخال بيانات الجسم وتحديث الوزن</h3>
-                <input type="number" id="weight-input" placeholder="الوزن الحالي (كجم)">
-                <input type="number" id="target-weight-input" placeholder="الوزن المستهدف (كجم)">
-                <input type="number" id="height-input" placeholder="الطول (سم)">
-                <input type="number" id="age-input" placeholder="العمر">
-                <select id="activity-level">
-                    <option value="1.2">خامل (عمل مكتبي)</option>
-                    <option value="1.375">نشاط خفيف (1-3 أيام)</option>
-                    <option value="1.55">نشاط متوسط (3-5 أيام)</option>
-                    <option value="1.725">نشاط شاق (رفع أثقال وكمال أجسام)</option>
-                </select>
-                <select id="gender">
-                    <option value="male">ذكر</option>
-                    <option value="female">أنثى</option>
-                </select>
-                <button id="save-data-btn">حفظ وتحديث النظام</button>
-                <button id="cancel-edit-btn" style="background: #444; display: none;">إلغاء</button>
-            </div>
-            
-            <!-- نتيجة السعرات والماكروز -->
-            <div id="diet-result" style="display: none;"></div>
+        <!-- Calorie & Macro Target Card -->
+        <div class="gym-card">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <span id="lbl-fuel-title">الوقود اليومي والماكروز</span>
+            </span>
+            <span class="badge badge-red" id="lbl-fuel-badge">هدف الذكاء الاصطناعي</span>
+          </div>
 
-            <!-- قسم تتبع الوزن (الرسم البياني) -->
-            <div class="card" id="progress-section" style="display: none;">
-                <h3>📊 سجل تطور الوزن</h3>
-                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px;">
-                    <canvas id="weightChart" style="max-height: 200px;"></canvas>
-                </div>
+          <div class="calorie-hero">
+            <div>
+              <div id="lbl-cal-remaining-title" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">السعرات المتبقية لليوم</div>
+              <div class="calorie-number" id="home-calories-remaining">3,100</div>
+              <div class="calorie-target" id="home-calories-target">/ 3,100 سعرة</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-gold" id="lbl-surplus-badge" style="font-size: 0.8rem; padding: 6px 12px;">+288 سعرة</span>
+              <div id="lbl-surplus-subtext" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">فائض علمي لبناء كتلة عضلية صافية</div>
+            </div>
+          </div>
+
+          <!-- Actionable Daily Remaining Targets Box -->
+          <div class="remaining-action-card">
+            <div class="remaining-card-header">
+              <div class="remaining-card-title">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--accent-red)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <span id="lbl-remaining-banner-title">المطلوب منك تقفيله اليوم لإنهاء هدفك:</span>
+              </div>
+              <span class="badge badge-red" id="lbl-remaining-status">متبقي لليوم</span>
             </div>
 
-            <!-- قسم جدول التغذية -->
-            <div class="card" id="diet-plan-section" style="display: none;">
-                <h3>جدول التغذية 🥗</h3>
-                <input type="text" id="favorite-foods" placeholder="مثال: بيض، شوفان، فراخ، رز، تونة">
-                <div style="display: flex; gap: 10px;">
-                    <button id="generate-diet-btn" style="flex: 1; background: linear-gradient(45deg, #1e7e34, #28a745);">توليد جدول الأكل</button>
-                    <button id="reset-diet-btn" style="width: 100px; background: #c0392b; display: none;">حذف الجدول</button>
-                </div>
-                <div id="diet-table-container"></div>
-                <button id="save-diet-btn" style="display: none; background: #27ae60;">حفظ تعديلات جدول الأكل</button>
+            <div class="remaining-grid">
+              <div class="remaining-box protein">
+                <span class="remaining-box-label" id="lbl-rem-p-title">مطلوب بروتين</span>
+                <span class="remaining-box-val" id="rem-p-val">165 جم</span>
+                <span class="remaining-box-consumed" id="rem-p-sub">مستهلك 0g من 165g</span>
+              </div>
+              <div class="remaining-box carbs">
+                <span class="remaining-box-label" id="lbl-rem-c-title">مطلوب كارب</span>
+                <span class="remaining-box-val" id="rem-c-val">432 جم</span>
+                <span class="remaining-box-consumed" id="rem-c-sub">مستهلك 0g من 432g</span>
+              </div>
+              <div class="remaining-box fat">
+                <span class="remaining-box-label" id="lbl-rem-f-title">مطلوب دهون</span>
+                <span class="remaining-box-val" id="rem-f-val">79 جم</span>
+                <span class="remaining-box-consumed" id="rem-f-sub">مستهلك 0g من 79g</span>
+              </div>
             </div>
 
-            <!-- قسم جدول التمرين -->
-            <div class="card" id="workout-plan-section" style="display: none;">
-                <h3>جدول التمرين 🏋️</h3>
-                <select id="workout-type">
-                    <option value="3">3 أيام - شامل للجسم (Full Body)</option>
-                    <option value="4">4 أيام - علوي وسفلي (Upper / Lower)</option>
-                    <option value="5">5 أيام - تقسيم عضلات (Bro Split)</option>
-                </select>
-                <div style="display: flex; gap: 10px;">
-                    <button id="generate-workout-btn" style="flex: 1; background: linear-gradient(45deg, #117a8b, #17a2b8);">عرض جدول التمرين</button>
-                    <button id="reset-workout-btn" style="width: 100px; background: #c0392b; display: none;">حذف الجدول</button>
-                </div>
-                <div id="workout-table-container"></div>
-                <button id="save-workout-btn" style="display: none; background: #27ae60;">حفظ تعديلات جدول التمرين</button>
+            <div class="remaining-coach-tip" id="remaining-coach-tip">
+              💡 <strong>بداية اليوم:</strong> مطلوب منك اليوم 165 جم بروتين و 432 جم كارب لبناء عضلات صافية. سجل وجباتك أولاً بأول لتخصم فوراً!
+            </div>
+          </div>
+
+          <div class="macro-summary-grid">
+            <!-- Protein -->
+            <div class="macro-pill">
+              <div class="macro-pill-title" id="lbl-protein-title">بروتين (2.2 جم/كجم)</div>
+              <div class="macro-pill-remaining" id="home-p-rem">مطلوب: 165 جم</div>
+              <div class="macro-pill-sub" id="home-p-val">استهلكت 0g من 165g</div>
+              <div class="macro-bar-bg">
+                <div class="macro-bar-fill fill-protein" id="home-p-bar" style="width: 0%;"></div>
+              </div>
             </div>
 
-            <!-- شات الذكاء الاصطناعي -->
-            <div class="card ai-section">
-                <h3>اسأل كابتن الذكاء الاصطناعي 🧠</h3>
-                <div id="ai-chat-box">
-                    <p style="color: #888; font-size: 13px; text-align: center; margin:0;">الكابتن جاهز للرد على استفساراتك...</p>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <input type="text" id="ai-input" placeholder="اكتب سؤالك هنا..." style="flex: 1; margin:0;">
-                    <button id="ai-send-btn" style="width: 80px; margin:0;">إرسال</button>
-                </div>
+            <!-- Carbs -->
+            <div class="macro-pill">
+              <div class="macro-pill-title" id="lbl-carbs-title">كاربوهيدرات (طاقة وجليكوجين)</div>
+              <div class="macro-pill-remaining" id="home-c-rem">مطلوب: 432 جم</div>
+              <div class="macro-pill-sub" id="home-c-val">استهلكت 0g من 432g</div>
+              <div class="macro-bar-bg">
+                <div class="macro-bar-fill fill-carbs" id="home-c-bar" style="width: 0%;"></div>
+              </div>
             </div>
+
+            <!-- Fat -->
+            <div class="macro-pill" style="grid-column: span 2;">
+              <div class="macro-pill-title" id="lbl-fat-title">دهون صحية (الهرمونات والتستوستيرون)</div>
+              <div class="macro-pill-remaining" id="home-f-rem">مطلوب: 79 جم</div>
+              <div class="macro-pill-sub" id="home-f-val">استهلكت 0g من 79g</div>
+              <div class="macro-bar-bg">
+                <div class="macro-bar-fill fill-fat" id="home-f-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Supplements Tracker (Unlocked for Mahmoud: Creatine + Citrulline) -->
+        <div class="gym-card glow-red">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5h15c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5h-15z"/></svg>
+              <span id="lbl-supplements-title">جدول المكملات والجرعات</span>
+            </span>
+            <span class="badge badge-red" id="lbl-supplements-badge">مواعيد الجرعات</span>
+          </div>
+
+          <!-- L-Citrulline -->
+          <div class="supplement-pill-item active-pulse" id="supp-box-citrulline">
+            <div>
+              <div class="supp-info-title" id="lbl-citrulline-title">إل-سيترولين ماليت (6 - 8 جم)</div>
+              <div class="supp-info-meta" id="lbl-citrulline-meta">⏰ قبل التمرين بـ 30-45 دقيقة &bull; ضخ الدم (بمب) وتوسيع الأوعية</div>
+            </div>
+            <button class="supp-check-btn" id="supp-check-citrulline" title="تسجيل السيترولين" aria-label="Log Citrulline"></button>
+          </div>
+
+          <!-- Creatine Monohydrate -->
+          <div class="supplement-pill-item" id="supp-box-creatine">
+            <div>
+              <div class="supp-info-title" id="lbl-creatine-title">كرياتين مونوهيدرات (5 جم)</div>
+              <div class="supp-info-meta" id="lbl-creatine-meta">⏰ يومياً بعد التمرين &bull; تعبئة مخازن الـ ATP وترطيب العضلات</div>
+            </div>
+            <button class="supp-check-btn checked" id="supp-check-creatine" title="تسجيل الكرياتين" aria-label="Log Creatine">✓</button>
+          </div>
+        </div>
+
+        <!-- Recovery Grid: Water & Sleep -->
+        <div class="recovery-grid">
+          <!-- Water Tracker -->
+          <div class="recovery-box">
+            <div id="lbl-hydration-title" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+              💧 الترطيب والماء
+            </div>
+            <div class="counter-display" id="counter-water-val" style="color: var(--info); margin: 6px 0;">2.25 L</div>
+            <div id="lbl-hydration-target" style="font-size: 0.7rem; color: var(--text-muted);">المستهدف: 3.50 لتر</div>
+            <div class="counter-controls">
+              <button class="counter-btn" id="btn-water-minus">-</button>
+              <button class="counter-btn" id="btn-water-plus" style="background: rgba(0,176,255,0.2); border-color: var(--info);">+</button>
+            </div>
+          </div>
+
+          <!-- Sleep Tracker -->
+          <div class="recovery-box">
+            <div id="lbl-sleep-title" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+              🌙 النوم والاستشفاء
+            </div>
+            <div class="counter-display" id="counter-sleep-val" style="color: var(--warning); margin: 6px 0;">7.5 hrs</div>
+            <div id="lbl-sleep-target" style="font-size: 0.7rem; color: var(--text-muted);">المستهدف: 8.0 ساعات</div>
+            <div class="counter-controls">
+              <button class="counter-btn" id="btn-sleep-minus">-</button>
+              <button class="counter-btn" id="btn-sleep-plus" style="background: rgba(255,179,0,0.2); border-color: var(--warning);">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Gym Launch Actions -->
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-primary" id="btn-start-workout" onclick="window.coachApp.navigateTo('workout')">
+            ابدأ تمرين اليوم الآن 🔥
+          </button>
+        </div>
+
+      </section>
+
+
+      <!-- ================= VIEW 2: AI WORKOUT & PROGRESSIVE OVERLOAD ================= -->
+      <section id="view-workout" class="spa-view">
+        <div class="gym-card glow-red">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>
+              <span id="lbl-workout-coach-title">سجل التمارين والزيادة التدريجية</span>
+            </span>
+            <span class="badge badge-red" id="lbl-workout-badge">تحكم مخصص بالكامل</span>
+          </div>
+          <p id="lbl-workout-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+            ضيف تمارينك الخاصة بأسمائها وأوزانك بحرية كاملة، وعدّل المجموعات والعدات، والذكاء الاصطناعي هيحلل أدائك ويقترح عليك الزيادة التدريجية في الوزن والتكرار.
+          </p>
+
+          <!-- Workout Top Action Buttons -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btn-show-add-exercise" style="flex: 1; min-height: 44px; font-size: 0.9rem;">
+              ➕ إضافة تمرين جديد
+            </button>
+            <button class="btn btn-secondary" id="btn-ai-overload-refresh" style="flex: 1; min-height: 44px; font-size: 0.85rem;">
+              🤖 تحليل ذكي للزيادة
+            </button>
+          </div>
+
+          <!-- Quick Templates / Clear Actions -->
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn btn-secondary" id="btn-load-workout-preset" style="min-height: 36px; padding: 6px 12px; font-size: 0.75rem; flex: 1;">
+              ⚡ جدول تضخيم مقترح
+            </button>
+            <button class="btn btn-outline-red" id="btn-clear-workout" style="min-height: 36px; padding: 6px 12px; font-size: 0.75rem; width: auto;">
+              🗑️ مسح التمارين
+            </button>
+          </div>
+        </div>
+
+        <!-- Add Custom Exercise Quick Box -->
+        <div id="quick-add-exercise-box" class="gym-card" style="display: none; margin-bottom: 14px; border: 1px dashed var(--accent-red); padding: 14px;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--accent-red-light);">➕ إضافة تمرين مخصص للجدول</h4>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <input type="text" class="form-input" id="input-new-exercise-name" placeholder="اكتب اسم التمرين (مثال: بنش مستوي، سكوات...)" style="margin-bottom: 0;">
+            <button class="btn btn-primary" id="btn-confirm-add-exercise" style="width: auto; padding: 0 18px; min-height: 46px;">إضافة</button>
+          </div>
+          <!-- Quick Popular Exercise Tags for one-click add -->
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">أو اختر تمرين شائع بضغطة واحدة:</div>
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-top: 2px;">
+            <span class="quick-ex-tag" data-name="بنش برس بار مستوي">+ بنش مستوي</span>
+            <span class="quick-ex-tag" data-name="تجميع دمبل مائل عالي">+ تجميع مائل</span>
+            <span class="quick-ex-tag" data-name="سحب بار ظهر واسع">+ سحب بار ظهر</span>
+            <span class="quick-ex-tag" data-name="سكوات بار حر">+ سكوات حر</span>
+            <span class="quick-ex-tag" data-name="ضغط كتف دمبل جالس">+ كتف دمبل</span>
+            <span class="quick-ex-tag" data-name="باربيل بايسبس كيرل">+ بايسبس بار</span>
+          </div>
+        </div>
+
+        <!-- Workout Exercise Cards Container -->
+        <div id="workout-exercises-list">
+          <!-- Dynamically populated by app.js -->
+        </div>
+
+        <button class="btn btn-primary" id="btn-finish-workout" style="margin-top: 14px;" onclick="window.coachApp.handleFinishWorkout();">
+          إنهاء وحفظ جلسة التمرين 🏆
+        </button>
+      </section>
+
+
+      <!-- ================= VIEW 3: AI NUTRITION & CAMERA SNAPPING ================= -->
+      <section id="view-diet" class="spa-view">
+        <div class="gym-card">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+              <span id="lbl-diet-title">ماسح الوجبات الذكي بالذكاء الاصطناعي</span>
+            </span>
+            <span class="badge badge-red">GEMINI 2.5 VISION</span>
+          </div>
+
+          <p id="lbl-diet-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+            صور طبقك بالكاميرا؛ جيميناي بيحلل مكونات الأكل، الكميات، السعرات، وجرامات البروتين في ثواني ويخصمها من هدفك اليومي.
+          </p>
+
+          <!-- Actionable Remaining Strip in Diet Screen -->
+          <div class="remaining-diet-strip">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span id="lbl-diet-strip-title" style="font-size: 0.8rem; font-weight: 800; color: #fff;">🎯 المطلوب منك تقفيله اليوم:</span>
+              <span class="badge badge-red" style="font-size: 0.65rem;">متبقي للهدف</span>
+            </div>
+            <div class="diet-strip-items">
+              <span class="diet-strip-pill protein" id="diet-rem-p">🍗 165 جم بروتين</span>
+              <span class="diet-strip-pill carbs" id="diet-rem-c">🍚 432 جم كارب</span>
+              <span class="diet-strip-pill fat" id="diet-rem-f">🥑 79 جم دهون</span>
+              <span class="diet-strip-pill calories" id="diet-rem-cal">🔥 3,100 سعرة</span>
+            </div>
+          </div>
+
+          <!-- Camera preview box -->
+          <div class="camera-preview-box" id="meal-camera-preview">
+            <div class="camera-placeholder">
+              <svg viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0 -6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+              <span id="lbl-diet-snap-text" style="font-weight: 700; font-size: 0.95rem;">اضغط لتصوير وجبتك 📸</span>
+              <span id="lbl-diet-snap-subtext" style="font-size: 0.75rem; color: var(--text-muted);">أو ارفع صورة من المعرض</span>
+            </div>
+          </div>
+
+          <input type="file" id="meal-file-input" accept="image/*" capture="environment" style="display: none;">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-primary" id="btn-snap-meal">
+              📸 تصوير الوجبة
+            </button>
+            <button class="btn btn-secondary" id="btn-add-meal-manual">
+              ✍️ تسجيل وجبة يدوياً
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 18px 4px 10px 4px;">
+          <h3 id="lbl-logged-meals-title" style="font-size: 1rem; font-weight: 800; text-transform: uppercase; margin: 0;">
+            الوجبات المسجلة اليوم
+          </h3>
+          <button class="badge badge-gold" id="btn-quick-add-meal-header" onclick="window.coachApp.openAddMealModal()" style="cursor: pointer; border: none; padding: 4px 10px; font-size: 0.75rem;">
+            + إضافة وجبة
+          </button>
+        </div>
+
+        <div id="diet-meals-container">
+          <!-- Dynamically populated by app.js -->
+        </div>
+      </section>
+
+
+      <!-- ================= VIEW 4: WEEKLY PHYSIQUE CHECK-IN ================= -->
+      <section id="view-progress" class="spa-view">
+        <div class="gym-card glow-red">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4H6v-2h4V7h2v4h4v2h-4v4z"/></svg>
+              <span id="lbl-checkin-title">تسجيل المتابعة الأسبوعية للشكل والوزن</span>
+            </span>
+            <span class="badge badge-red" id="lbl-checkin-badge">فحص التضخيم النظيف</span>
+          </div>
+
+          <p id="lbl-checkin-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">
+            ارفع صورتك الأسبوعية ووزنك على الريق. جيميناي بيحلل نسبة الدهون، امتلاء العضلات، ويعدل سعرات وماكروز الأسبوع القادم تلقائياً.
+          </p>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 12px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; border: 1px solid var(--border-subtle);">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">الوزن المسجل حالياً:</span>
+            <strong id="progress-current-weight" style="font-size: 1.15rem; color: var(--accent-red-light);">75.0 كجم</strong>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" id="lbl-morning-weight">الوزن الحالي على الريق (كجم)</label>
+            <input type="number" step="0.1" class="form-input" id="input-checkin-weight" value="75.1">
+            <span id="lbl-morning-weight-subtext" style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">
+              وزن الأسبوع الماضي: 74.8 كجم &bull; الزيادة المستهدفة: +0.25 إلى +0.35 كجم/أسبوع
+            </span>
+          </div>
+
+          <div class="camera-preview-box" id="physique-camera-preview">
+            <div class="camera-placeholder">
+              <svg viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0 -6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+              <span id="lbl-upload-photo-text" style="font-weight: 700; font-size: 0.95rem;">ارفع صورة الفورمة (أمامي أو جانبي)</span>
+              <span id="lbl-upload-photo-subtext" style="font-size: 0.75rem; color: var(--text-muted);">عضلات مشدودة في إضاءة جيدة</span>
+            </div>
+          </div>
+
+          <input type="file" id="physique-file-input" accept="image/*" style="display: none;">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-secondary" id="btn-snap-physique">
+              📷 اختيار صورة
+            </button>
+            <button class="btn btn-primary" id="btn-submit-checkin">
+              تحليل الفورمة وتعديل السعرات 🚀
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Physique Feedback Result Card (Hidden until submitted) -->
+        <div class="gym-card" id="physique-results-card" style="display: none; border-color: var(--accent-red);">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span id="lbl-physique-verdict-title">تقرير الذكاء الاصطناعي وتعديل الدايت</span>
+            </span>
+            <span class="badge badge-green">تم التعديل</span>
+          </div>
+          <div id="physique-feedback-text" style="font-size: 0.88rem; line-height: 1.5;"></div>
+        </div>
+      </section>
+
+
+      <!-- ================= VIEW 5: IRON COACH CHAT ================= -->
+      <section id="view-coach" class="spa-view">
+        <div class="chat-container">
+          <!-- Suggestion Chips -->
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px;">
+            <button class="badge badge-red coach-chip" id="chip-rem-macros" data-prompt="احسبلي المتبقي والمطلوب مني النهاردة بالضبط من بروتين وكارب وسعرات واقترحلي وجبة تقفلهم">🎯 المطلوب مني لليوم؟</button>
+            <button class="badge badge-gold coach-chip" id="chip-overload" data-prompt="ازاي ازود وزني في البنش برس النهاردة؟">زيادة البنش برس</button>
+            <button class="badge badge-red coach-chip" id="chip-supplements" data-prompt="ميعاد جرعة السيترولين والكرياتين الصح امتى؟">مواعيد المكملات</button>
+            <button class="badge badge-gold coach-chip" id="chip-math" data-prompt="ليه التضخيم النظيف بتاعي 3100 سعرة؟">حسبة السعرات الحقيقية</button>
+            <button class="badge badge-red coach-chip" id="chip-water" data-prompt="اشرب كام لتر مية مع 5 جم كرياتين؟">الماء والكرياتين</button>
+          </div>
+
+          <div class="chat-messages" id="chat-messages-box">
+            <!-- Dynamically populated by app.js -->
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" class="form-input" id="chat-text-input" placeholder="اسأل كابتن الحديد أي حاجة في التمرين والدايت..." style="margin-bottom: 0;">
+            <button class="btn btn-primary" id="btn-chat-send" style="width: auto; padding: 0 20px;">
+              إرسال
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Gym Ergonomics) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="home" aria-label="Home Dashboard">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span class="nav-label" id="nav-label-home">الرئيسية</span>
+      </button>
+
+      <button class="nav-item" data-view="workout" aria-label="Workout Logger">
+        <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>
+        <span class="nav-label" id="nav-label-workout">التمارين</span>
+      </button>
+
+      <button class="nav-item" data-view="diet" aria-label="Nutrition & Diet">
+        <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+        <span class="nav-label" id="nav-label-diet">الدايت</span>
+      </button>
+
+      <button class="nav-item" data-view="progress" aria-label="Physique Progress">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4H6v-2h4V7h2v4h4v2h-4v4z"/></svg>
+        <span class="nav-label" id="nav-label-progress">التطور</span>
+      </button>
+
+      <button class="nav-item" data-view="coach" aria-label="AI Coach Chat">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        <span class="nav-label" id="nav-label-coach">المدرب الذكي</span>
+      </button>
+    </nav>
+
+
+    <!-- ================= MODAL 1: AUTH & SIGN-IN SCREEN ================= -->
+    <div class="modal-overlay" id="modal-auth">
+      <div class="modal-box" style="text-align: center;">
+        <div class="brand-icon" style="margin: 0 auto 14px auto; width: 48px; height: 48px;">
+          <svg viewBox="0 0 24 24" style="width: 28px; height: 28px;"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>
+        </div>
+        <h2 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 6px;">مرحباً بك في SMART COACH</h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 22px;">
+          سجل دخولك لبدء خطة التغذية والتمارين والمزامنة السحابية عبر Firebase
+        </p>
+
+        <!-- Google Sign-In Button -->
+        <button class="google-auth-btn" id="btn-auth-google">
+          <svg viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          <span id="lbl-auth-google-text">تسجيل الدخول بحساب جوجل</span>
+        </button>
+
+        <div style="display: flex; align-items: center; margin: 16px 0; color: var(--text-muted); font-size: 0.8rem;">
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--border-subtle);">
+          <span style="padding: 0 10px;">أو</span>
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--border-subtle);">
+        </div>
+
+        <button class="btn btn-secondary" id="btn-auth-guest" style="margin-bottom: 10px;">
+          دخول سريع كـ ضيف وإدخال البيانات
+        </button>
+
+        <button class="btn btn-outline-red" id="btn-auth-preset-mahmoud">
+          ⚡ تجربة سريعة ببروفايل محمود (حالة الاختبار)
+        </button>
+      </div>
     </div>
 
-    <script type="module" src="app.js"></script>
+
+    <!-- ================= MODAL 2: DYNAMIC ONBOARDING FORM ================= -->
+    <div class="modal-overlay" id="modal-onboarding">
+      <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div>
+            <h3 id="lbl-onboarding-title" style="font-size: 1.25rem; font-weight: 900; text-transform: uppercase;">تقييم وتحديد الأهداف</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">لحساب احتياج جسمك الحقيقي من السعرات والماكروز</span>
+          </div>
+          <button class="btn btn-secondary btn-icon-round" onclick="window.coachApp.closeModal('modal-onboarding')">✕</button>
+        </div>
+
+        <!-- Name & Gender -->
+        <div class="form-group">
+          <label class="form-label">الاسم بالكامل</label>
+          <input type="text" class="form-input" id="onboard-name" value="محمود" placeholder="اسمك">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">السن (بالسنوات)</label>
+            <input type="number" class="form-input" id="onboard-age" value="22" min="14" max="80">
+          </div>
+          <div class="form-group">
+            <label class="form-label">الطول (سم)</label>
+            <input type="number" class="form-input" id="onboard-height" value="178" min="130" max="230">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">الوزن الحالي (كجم)</label>
+            <input type="number" step="0.1" class="form-input" id="onboard-weight" value="75.0" min="40" max="250">
+          </div>
+          <div class="form-group">
+            <label class="form-label">أيام التمرين/الأسبوع</label>
+            <select class="form-select" id="onboard-days">
+              <option value="3">3 أيام (تمرين متوسط)</option>
+              <option value="4">4 أيام (علوي/سفلي)</option>
+              <option value="5" selected>5 أيام (تضخيم مكثف)</option>
+              <option value="6">6 أيام (Push/Pull/Legs)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Goal Selection -->
+        <div class="form-group">
+          <label class="form-label">الهدف الرياضي الأساسي</label>
+          <select class="form-select" id="onboard-goal">
+            <option value="Lean Bulk" selected>تضخيم عضلات صافية (Lean Bulk - فائض +275 سعرة)</option>
+            <option value="Heavy Bulk">تضخيم قوي وسريع (Heavy Bulk - فائض +500 سعرة)</option>
+            <option value="Cutting">تنشيف ونحت عضلات (Cutting - عجز -500 سعرة)</option>
+            <option value="Maintenance">ثبات وزن وصيانة (Maintenance)</option>
+          </select>
+        </div>
+
+        <!-- Supplements Toggle & Picker -->
+        <div class="form-group" style="margin-top: 10px;">
+          <div class="toggle-switch-wrapper">
+            <div>
+              <strong style="font-size: 0.95rem;">هل تستخدم مكملات غذائية؟</strong>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">لجدولة مواعيد الجرعات قبل وبعد التمرين</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="onboard-has-supplements" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div id="onboard-supplements-picker" style="margin-top: 10px; display: block;">
+            <label class="supp-checkbox-item">
+              <input type="checkbox" id="onboard-supp-creatine" checked>
+              <div>
+                <strong>كرياتين مونوهيدرات (Creatine)</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">5 جم يومياً بعد التمرين لتعبئة الـ ATP وترطيب العضلة</div>
+              </div>
+            </label>
+
+            <label class="supp-checkbox-item">
+              <input type="checkbox" id="onboard-supp-citrulline" checked>
+              <div>
+                <strong>إل-سيترولين ماليت (L-Citrulline)</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">6 إلى 8 جم قبل التمرين بـ 35 دقيقة لأقصى بمب وتوسيع أوعية</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Live Calculation Preview Card -->
+        <div class="onboarding-calc-box">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <strong style="font-size: 0.9rem; color: var(--accent-red-light);">حساب الخطة التلقائي (Mifflin-St Jeor):</strong>
+            <span id="onboard-preview-calories" style="font-size: 1.3rem; font-weight: 900; color: #fff;">3,000 سعرة</span>
+          </div>
+
+          <div class="onboarding-calc-grid">
+            <div class="calc-pill">
+              <div class="calc-pill-title">بروتين (2.26 جم/كجم)</div>
+              <div class="calc-pill-val" id="onboard-preview-protein">170g</div>
+            </div>
+            <div class="calc-pill">
+              <div class="calc-pill-title">كاربوهيدرات</div>
+              <div class="calc-pill-val" id="onboard-preview-carbs">400g</div>
+            </div>
+            <div class="calc-pill">
+              <div class="calc-pill-title">دهون صحية</div>
+              <div class="calc-pill-val" id="onboard-preview-fat">80g</div>
+            </div>
+            <div class="calc-pill">
+              <div class="calc-pill-title">الماء المطلوب</div>
+              <div class="calc-pill-val" id="onboard-preview-water">3.5 L</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-save-onboarding">
+          حفظ وحساب الماكروز وبدء التمرين 🚀
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ================= MODAL 3: SETTINGS & FIREBASE CONFIG ================= -->
+    <div class="modal-overlay" id="modal-settings">
+      <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 id="lbl-settings-title" style="font-size: 1.15rem; font-weight: 900; text-transform: uppercase;">الملف الشخصي والإعدادات</h3>
+          <button class="btn btn-secondary btn-icon-round" onclick="window.coachApp.closeModal('modal-settings')">✕</button>
+        </div>
+
+        <!-- Current User Status Card -->
+        <div class="gym-card" style="margin-bottom: 14px; padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong id="settings-user-display" style="font-size: 1.05rem;">محمود</strong>
+              <div id="settings-user-email" style="font-size: 0.75rem; color: var(--text-secondary);">mahmoud.gym@gmail.com</div>
+            </div>
+            <button class="badge badge-red" id="btn-logout" style="cursor: pointer; border: none; padding: 6px 12px;">تسجيل خروج</button>
+          </div>
+        </div>
+
+        <!-- Quick Intake / Re-assessment Trigger -->
+        <button class="btn btn-secondary" id="btn-reopen-onboarding" style="margin-bottom: 16px; border-color: var(--border-highlight);">
+          📝 تعديل القياسات والأهداف (إعادة فتح التقييم)
+        </button>
+
+        <button class="btn btn-outline-red" id="btn-preset-mahmoud" style="margin-bottom: 18px;">
+          ⚡ استعادة بروفايل محمود الافتراضي (22 سنة - تضخيم نظيف)
+        </button>
+
+        <!-- Firebase Cloud Integration Section -->
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="font-size: 0.95rem; text-transform: uppercase;">ربط مشروع Firebase السحابي</strong>
+            <span class="badge" id="badge-firebase-status" style="font-size: 0.68rem;">وضع أوفلاين محلي</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">
+            ضع بيانات مشروعك في Firebase للمزامنة الحية بين أجهزتك واستخدام Google Sign-In المباشر:
+          </p>
+
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label" style="font-size: 0.75rem;">Firebase API Key</label>
+            <input type="text" class="form-input" id="cfg-fb-key" placeholder="AIzaSy...">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label" style="font-size: 0.75rem;">Project ID</label>
+            <input type="text" class="form-input" id="cfg-fb-project" placeholder="my-fitness-project">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label" style="font-size: 0.75rem;">Auth Domain</label>
+            <input type="text" class="form-input" id="cfg-fb-domain" placeholder="my-fitness-project.firebaseapp.com">
+          </div>
+
+          <button class="btn btn-secondary" id="btn-save-firebase-config" style="min-height: 44px; font-size: 0.85rem; margin-bottom: 16px;">
+            💾 حفظ والاتصال بـ Firebase
+          </button>
+        </div>
+
+        <!-- Google Gemini API Key Section -->
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+          <div class="form-group">
+            <label class="form-label" id="lbl-setting-api-key">مفتاح Google Gemini API Key</label>
+            <input type="password" class="form-input" id="input-gemini-key" placeholder="AIzaSy...">
+            <span id="lbl-setting-api-subtext" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
+              يستخدم نموذج Google Gemini 2.5 Flash المعتمد لتحليل صور الوجبات وتوجيهات زيادة الأوزان. اتركه فارغاً للمحاكاة الذكية المتقدمة.
+            </span>
+          </div>
+
+          <button class="btn btn-primary" id="btn-save-gemini-key" style="margin-top: 6px;">
+            حفظ إعدادات الذكاء الاصطناعي
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= MODAL 4: MEAL CREATOR & EDITOR ================= -->
+    <div class="modal-overlay" id="modal-meal-editor">
+      <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div>
+            <h3 id="lbl-meal-modal-title" style="font-size: 1.15rem; font-weight: 900; text-transform: uppercase;">تسجيل وجبة رياضية</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">سجل أو عدل المكونات والماكروز بدقة</span>
+          </div>
+          <button class="btn btn-secondary btn-icon-round" onclick="window.coachApp.closeModal('modal-meal-editor')">✕</button>
+        </div>
+
+        <input type="hidden" id="meal-edit-index" value="-1">
+
+        <div class="form-group">
+          <label class="form-label">اسم الوجبة ومكوناتها</label>
+          <input type="text" class="form-input" id="meal-input-name" placeholder="مثال: 200 جم صدور دجاج مشوية مع 150 جم أرز بسمتي">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div class="form-group">
+            <label class="form-label" style="color: #ff5252;">البروتين (جم)</label>
+            <input type="number" step="0.5" class="form-input" id="meal-input-protein" placeholder="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color: #40c4ff;">الكارب (جم)</label>
+            <input type="number" step="0.5" class="form-input" id="meal-input-carbs" placeholder="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color: #ffd740;">الدهون (جم)</label>
+            <input type="number" step="0.5" class="form-input" id="meal-input-fat" placeholder="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="margin-bottom: 0;">السعرات الحرارية الإجمالية (kcal)</label>
+            <button type="button" class="badge badge-gold" id="btn-calc-meal-cals" style="cursor: pointer; border: none; font-size: 0.7rem; padding: 4px 8px;">
+              ⚡ احسب السعرات تلقائياً
+            </button>
+          </div>
+          <input type="number" class="form-input" id="meal-input-calories" placeholder="0" value="0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ملاحظات / وقت الوجبة (اختياري)</label>
+          <input type="text" class="form-input" id="meal-input-note" placeholder="مثال: وجبة بعد التمرين">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
+          <button class="btn btn-secondary" onclick="window.coachApp.closeModal('modal-meal-editor')">
+            إلغاء
+          </button>
+          <button class="btn btn-primary" id="btn-save-meal-form">
+            💾 حفظ الوجبة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gym Toast Notification Container -->
+    <div id="gym-toast-box" class="gym-toast"></div>
+
+  </div>
+
+  <!-- Application Logic (Universal Bundle - works on file:/// and https://) -->
+  <script src="app.bundle.js"></script>
 </body>
 </html>

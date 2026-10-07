@@ -1,0 +1,18 @@
+{
+  "name": "Smart-Fitness-Coach",
+  "short_name": "SmartCoach",
+  "description": "Real-time AI Fitness, Nutrition & Progressive Overload Coach",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#E50914",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23E50914'><rect width='512' height='512' fill='%230d0d0d'/><path d='M440 280l24-24-24-24-60 60-146-146 60-60-24-24-24 24-24-24-36 36-24-24-24 24 24 24-36 36 24 24-24 24 24 24 60-60 146 146-60 60 24 24 24-24 24 24 36-36 24 24 24-24-24-24 36-36-24-24z' fill='%23E50914'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
